@@ -70,7 +70,8 @@ input,button{font-family:inherit}
 <div id="hd">
   <div id="h1">
     <span id="ttl">博肖文書單 📚</span>
-    <span id="tc" style="font-size:12px;color:#6b4f8a"></span>
+    <span id="tc" style="font-size:12px;color:var(--text3)"></span>
+    <button onclick="openBackup()" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:10px;padding:7px 11px;font-size:16px;cursor:pointer" title="備份">☁️</button>
     <button id="addbtn" onclick="openAdd()">＋ 新增</button>
   </div>
   <div id="sw">
@@ -93,6 +94,36 @@ input,button{font-family:inherit}
   <label class="fl">評分</label><div class="rr" id="arr"></div>
   <div class="ckr"><input type="checkbox" id="frn"><label for="frn">換頭文</label></div>
   <button class="subbtn" onclick="submitAdd()">＋ 加入書單</button>
+</div></div>
+<!-- BACKUP -->
+<div id="bo" class="ov" style="display:none" onclick="if(event.target===this)closeBackup()">
+<div class="sh">
+  <div class="str"><span class="stit">☁️ 備份書單</span><button class="xb" onclick="closeBackup()">×</button></div>
+  <div style="font-size:13px;color:var(--text3);margin-bottom:14px">共 <span id="bk-count"></span> 本。建議同時用兩種方法備份，雙重保險！</div>
+
+  <div style="background:var(--sbox-bg);border-radius:12px;padding:14px;margin-bottom:10px">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">方法一 📋 複製到備忘錄</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px">iCloud 自動同步，換手機後備忘錄裡就有</div>
+    <button onclick="doCopy()" id="copybtn" style="width:100%;padding:11px 0;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer">📋 複製書單文字</button>
+  </div>
+
+  <div style="background:var(--sbox-bg);border-radius:12px;padding:14px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">方法二 📁 下載成檔案</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px">存到 iCloud Drive / Files，永久保存</div>
+    <button onclick="doDownload()" style="width:100%;padding:11px 0;border-radius:10px;border:none;background:#0ea5e9;color:#fff;font-size:14px;font-weight:600;cursor:pointer">📁 下載備份檔案</button>
+  </div>
+
+  <div style="background:var(--sbox-bg);border-radius:12px;padding:14px">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">📥 還原書單</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:8px">方法一：貼上備忘錄裡的文字</div>
+    <textarea id="import-txt" style="width:100%;height:70px;background:var(--input-bg);border:1px solid var(--border);border-radius:9px;color:var(--text);padding:9px;font-size:12px;outline:none;resize:none" placeholder="貼上備份文字..."></textarea>
+    <button onclick="doImport()" style="width:100%;padding:10px 0;border-radius:10px;border:none;background:#059669;color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px">從文字還原</button>
+    <div style="font-size:12px;color:var(--text3);margin:10px 0 8px">方法二：選擇備份檔案</div>
+    <label style="display:block;width:100%;padding:10px 0;border-radius:10px;border:2px dashed var(--border);color:var(--text3);font-size:14px;text-align:center;cursor:pointer">
+      選擇 .json 備份檔案
+      <input type="file" accept=".json" onchange="doImportFile(event)" style="display:none">
+    </label>
+  </div>
 </div></div>
 <div id="do" class="ov" style="display:none" onclick="if(event.target===this)closeDetail()">
 <div class="sh" id="ds"></div></div>
@@ -646,6 +677,67 @@ function submitAdd(){
   if(!t){document.getElementById('ft').focus();return;}
   novels.unshift({id:Date.now(),t,a:document.getElementById('fau').value.trim(),c:document.getElementById('fch').value.trim(),j:document.getElementById('fj').value.trim(),s:document.getElementById('fsu').value.trim(),rn:document.getElementById('frn').checked?1:0,r:addR});
   save();closeAdd();render();
+}
+
+
+function openBackup(){
+  document.getElementById("bk-count").textContent=novels.length;
+  document.getElementById("import-txt").value="";
+  document.getElementById("bo").style.display="flex";
+}
+function closeBackup(){document.getElementById("bo").style.display="none";}
+
+function doCopy(){
+  const data=JSON.stringify(novels);
+  const btn=document.getElementById("copybtn");
+  navigator.clipboard.writeText(data).then(()=>{
+    btn.textContent="✅ 已複製！去備忘錄貼上儲存";
+    setTimeout(()=>{btn.textContent="📋 複製到備忘錄（iCloud同步）";},3000);
+  }).catch(()=>{
+    const ta=document.createElement("textarea");
+    ta.value=data;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);
+    btn.textContent="✅ 已複製！去備忘錄貼上儲存";
+    setTimeout(()=>{btn.textContent="📋 複製到備忘錄（iCloud同步）";},3000);
+  });
+}
+
+function doDownload(){
+  const data=JSON.stringify(novels,null,2);
+  const blob=new Blob([data],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  const d=new Date();
+  a.download="博肖書單備份_"+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,"0")+d.getDate().toString().padStart(2,"0")+".json";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function doImport(){
+  const txt=document.getElementById("import-txt").value.trim();
+  if(!txt){alert("請先貼上備份文字");return;}
+  try{
+    const parsed=JSON.parse(txt);
+    if(!Array.isArray(parsed)||parsed.length===0){alert("格式不對，請確認是正確的備份文字");return;}
+    if(!confirm("確定還原？現有書單會被覆蓋，共 "+parsed.length+" 本。"))return;
+    novels=parsed;save();closeBackup();render();
+    alert("✅ 還原成功！共 "+novels.length+" 本");
+  }catch(e){alert("格式不對，請確認是正確的備份文字");}
+}
+
+function doImportFile(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const parsed=JSON.parse(ev.target.result);
+      if(!Array.isArray(parsed)||parsed.length===0){alert("格式不對");return;}
+      if(!confirm("確定還原？共 "+parsed.length+" 本。"))return;
+      novels=parsed;save();closeBackup();render();
+      alert("✅ 還原成功！共 "+novels.length+" 本");
+    }catch(e){alert("格式不對");}
+  };
+  reader.readAsText(file);
 }
 
 load();render();
