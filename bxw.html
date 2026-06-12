@@ -688,15 +688,24 @@ function openBackup(){
 function closeBackup(){document.getElementById("bo").style.display="none";}
 
 function doCopy(){
-  const data=JSON.stringify(novels);
+  // 分段複製，每段200本，備忘錄放得下
+  const total=novels.length;
+  const chunk=200;
+  const parts=Math.ceil(total/chunk);
+  let text="📚博肖書單備份 共"+total+"本\n=====\n";
+  for(let i=0;i<total;i++){
+    const n=novels[i];
+    text+=(i+1)+". "+n.t+(n.a?" ("+n.a+")":"")+" ★"+n.r+"\n";
+  }
+  text+="=====\n【完整備份資料】\n"+JSON.stringify(novels);
   const btn=document.getElementById("copybtn");
-  navigator.clipboard.writeText(data).then(()=>{
-    btn.textContent="✅ 已複製！去備忘錄貼上儲存";
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent="✅ 已複製！去備忘錄貼上";
     setTimeout(()=>{btn.textContent="📋 複製到備忘錄（iCloud同步）";},3000);
   }).catch(()=>{
     const ta=document.createElement("textarea");
-    ta.value=data;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);
-    btn.textContent="✅ 已複製！去備忘錄貼上儲存";
+    ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);
+    btn.textContent="✅ 已複製！去備忘錄貼上";
     setTimeout(()=>{btn.textContent="📋 複製到備忘錄（iCloud同步）";},3000);
   });
 }
